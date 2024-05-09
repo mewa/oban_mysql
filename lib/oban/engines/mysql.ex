@@ -263,7 +263,7 @@ defmodule Oban.Engines.MySQL do
 
       result
     after
-      with {:ok, _, lock_key} <- lock_info do
+      with {:ok, _query, lock_key} <- lock_info do
         release_lock(conf, lock_key)
       end
     end
