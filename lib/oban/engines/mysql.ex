@@ -85,6 +85,7 @@ defmodule Oban.Engines.MySQL do
       |> where([j], j.attempt < j.max_attempts)
       |> order_by([j], asc: j.priority, asc: j.scheduled_at, asc: j.id)
       |> limit(^demand)
+      |> lock("FOR UPDATE SKIP LOCKED")
 
     updates = [
       set: [state: "executing", attempted_at: utc_now(), attempted_by: [meta.node]],
