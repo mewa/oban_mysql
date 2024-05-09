@@ -210,7 +210,23 @@ defmodule Oban.Engines.MySQL do
   end
 
   @impl Engine
-  defdelegate cancel_all_jobs(conf, queryable), to: Basic
+  def cancel_all_jobs(conf, queryable) do
+    base_query = where(queryable, [j], j.state not in ["cancelled", "completed", "discarded"])
+
+    {:ok, jobs} = Repo.transaction(conf, fn ->
+      to_cancel = Repo.all(conf, base_query)
+      job_ids = to_cancel |> Enum.map(&(&1.id))
+
+      query = Job
+      |> where([j], j.id in ^job_ids)
+
+      Repo.update_all(conf, query, set: [state: "cancelled", cancelled_at: utc_now()])
+
+      to_cancel
+    end)
+
+    {:ok, jobs}
+  end
 
   @impl Engine
   defdelegate retry_job(conf, job), to: Basic
